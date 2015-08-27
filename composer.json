@@ -1,0 +1,23 @@
+{
+    "name": "koine/delayed-cache",
+    "description": "Delayed cache for php",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Marcelo Jacobus",
+            "email": "marcelo.jacobus@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.5",
+        "zendframework/zend-cache" : "~2.5"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*",
+        "fabpot/php-cs-fixer": "1.7.*",
+        "satooshi/php-coveralls": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {"Koine\\DelayedCache\\": "src"}
+    }
+}

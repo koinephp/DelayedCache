@@ -1,0 +1,19 @@
+<phpunit
+  colors="true"
+  convertErrorsToExceptions="true"
+  convertNoticesToExceptions="true"
+  convertWarningsToExceptions="true"
+>
+  <testsuites>
+    <testsuite name="Koine Delayed Cache">
+      <directory>./tests</directory>
+    </testsuite>
+  </testsuites>
+
+  <filter>
+    <whitelist>
+      <directory suffix=".php">src</directory>
+    </whitelist>
+  </filter>
+
+</phpunit>
