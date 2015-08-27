@@ -18,15 +18,15 @@ matrix:
     - php: hhvm
 
 before_install:
+  - mkdir -p build/logs
   - composer self-update
 
 install:
   - travis_retry composer install --no-interaction --ignore-platform-reqs
 
 script:
-  - mkdir -p build/logs
   - if [[ $EXECUTE_TEST_COVERALLS != 'true' ]]; then vendor/bin/phpunit ; fi
-  - if [[ $EXECUTE_TEST_COVERALLS == 'true' ]]; then vendor/bin/phpunit --coverage-clover=./build/logs/clover.xml --configuration=tests/phpunit.xml ; fi
+  - if [[ $EXECUTE_TEST_COVERALLS == 'true' ]]; then vendor/bin/phpunit --coverage-clover=./build/logs/clover.xml; fi
   - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./bin/php-cs-fix.sh src true  ; fi
   - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./bin/php-cs-fix.sh tests true  ; fi
 
