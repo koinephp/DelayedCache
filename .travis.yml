@@ -27,8 +27,8 @@ script:
   - mkdir -p build/logs
   - if [[ $EXECUTE_TEST_COVERALLS != 'true' ]]; then vendor/bin/phpunit ; fi
   - if [[ $EXECUTE_TEST_COVERALLS == 'true' ]]; then vendor/bin/phpunit --coverage-clover=coverage/coverage.xml --configuration=tests/phpunit.xml ; fi
-  - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./bin/php-cs-fix src true  ; fi
-  - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./bin/php-cs-fix tests true  ; fi
+  - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./bin/php-cs-fix.sh src true  ; fi
+  - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./bin/php-cs-fix.sh tests true  ; fi
 
 after_script:
   - if [[ $EXECUTE_TEST_COVERALLS == 'true' ]]; then ./vendor/bin/coveralls ; fi
