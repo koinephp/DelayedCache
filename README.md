@@ -1,6 +1,8 @@
 # Koine Delayed Cache
 
-Delayed Cache for easing the SQL composing
+Delayed Cache. Sometimes you want a cached result when its construction is
+still ongoing. Delayed cache will wait until it is ready and then it will return
+the result for you.
 
 Code information:
 
@@ -41,7 +43,69 @@ Append the lib to your requirements key in your composer.json.
 ## Usage
 
 ```php
+$zendCache = $cache  = \Zend\Cache\StorageFactory::adapterFactory(
+    'apc',
+    array('ttl' => 3600)
+);
+
+$delayedCache = new \Koine\DelayedCache\DelayedCache($zendCache);
 ```
+
+```php
+// index.php, second 10:00:00 am
+
+$cacheKey = 'veryExpansiveCalculation';
+
+$veryExpansiveCalculation = function () {
+    sleep(60);
+
+    return '42';
+};
+
+if (!$delayedCache->hasItem($cacheKey)) {
+    $delayedCache->setItem($cacheKey, $veryExpansiveCalculation());
+}
+
+echo 'answer is: ' . $delayedCache->getItem($cacheKey);
+
+
+// index.php, 10:00:10 am
+
+$cacheKey = 'veryExpansiveCalculation';
+
+$veryExpansiveCalculation = function () {
+    sleep(60);
+
+    return '42';
+};
+
+// although the result is not ready yet, hasItem will return true
+if (!$delayedCache->hasItem($cacheKey)) {
+    $delayedCache->setItem($cacheKey, $veryExpansiveCalculation());
+}
+
+// Waits 50 seconds until the building of the cache is done and then returns
+// The $veryExpansiveCalculation callback will not be executed twice, unless the
+// cache is cleared
+echo 'answer is: ' . $delayedCache->getItem($cacheKey);
+
+```
+
+Alternatively you can use the short method:
+
+```php
+$cacheKey = 'veryExpansiveCalculation';
+
+$veryExpansiveCalculation = function () {
+    sleep(60);
+
+    return '42';
+};
+
+// if cache is not set, it will set and then return the cached value
+echo 'answer is: ' . $delayedCache->getWithFallback($cacheKey, $veryExpansiveCalculation);
+```
+
 
 ## Issues/Features proposals
 

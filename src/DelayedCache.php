@@ -32,6 +32,9 @@ class DelayedCache implements StorageInterface
         return $this->storage->getOptions();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getItem($key, &$success = null, &$casToken = null)
     {
         return $this->storage->getItem($key, $success, $casToken);
@@ -39,106 +42,115 @@ class DelayedCache implements StorageInterface
 
     public function getItems(array $keys)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->getItems($keys);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function hasItem($key)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->hasItem($key);
     }
 
     public function hasItems(array $keys)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->hasItems($keys);
     }
 
     public function getMetadata($key)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->getMetadata($key);
     }
 
     public function getMetadatas(array $keys)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->getMetadatas($keys);
     }
 
     public function setItem($key, $value)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->setItem($key, $value);
     }
 
     public function setItems(array $keyValuePairs)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->setItems($keyValuePairs);
     }
 
     public function addItem($key, $value)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->addItem($key, $value);
     }
 
     public function addItems(array $keyValuePairs)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->addItems($keyValuePairs);
     }
 
     public function replaceItem($key, $value)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->replaceItem($key, $value);
     }
 
     public function replaceItems(array $keyValuePairs)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->replaceItems($keyValuePairs);
     }
 
     public function checkAndSetItem($token, $key, $value)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->checkAndSetItem($token, $key, $value);
     }
 
     public function touchItem($key)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->touchItem($key);
     }
 
     public function touchItems(array $keys)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->touchItems($keys);
     }
 
     public function removeItem($key)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->removeItem($key);
     }
 
     public function removeItems(array $keys)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->removeItems($keys);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function incrementItem($key, $value)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->incrementItem($key, $value);
     }
 
     public function incrementItems(array $keyValuePairs)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->incrementItems($keyValuePairs);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function decrementItem($key, $value)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->decrementItem($key, $value);
     }
 
     public function decrementItems(array $keyValuePairs)
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->decrementItems($keyValuePairs);
     }
 
     public function getCapabilities()
     {
-        throw new \Exception('Not implemented');
+        return $this->storage->getCapabilities();
     }
 }
