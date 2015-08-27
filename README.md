@@ -67,8 +67,9 @@ if (!$delayedCache->hasItem($cacheKey)) {
 }
 
 echo 'answer is: ' . $delayedCache->getItem($cacheKey);
+```
 
-
+```php
 // index.php, 10:00:10 am
 
 $cacheKey = 'veryExpansiveCalculation';
