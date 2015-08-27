@@ -62,11 +62,13 @@ $veryExpansiveCalculation = function () {
     return '42';
 };
 
+// hasItem returns true in the false time
 if (!$delayedCache->hasItem($cacheKey)) {
     $delayedCache->setItem($cacheKey, $veryExpansiveCalculation());
 }
 
-echo 'answer is: ' . $delayedCache->getItem($cacheKey);
+$answer = $delayedCache->getItem($cacheKey);
+echo 'answer is: ' . $answer;
 ```
 
 ```php
@@ -88,7 +90,8 @@ if (!$delayedCache->hasItem($cacheKey)) {
 // Waits 50 seconds until the building of the cache is done and then returns
 // The $veryExpansiveCalculation callback will not be executed twice, unless the
 // cache is cleared
-echo 'answer is: ' . $delayedCache->getItem($cacheKey);
+$answer = $delayedCache->getItem($cacheKey);
+echo 'answer is: ' . $answer;
 
 ```
 
@@ -104,7 +107,8 @@ $veryExpansiveCalculation = function () {
 };
 
 // if cache is not set, it will set and then return the cached value
-echo 'answer is: ' . $delayedCache->getWithFallback($cacheKey, $veryExpansiveCalculation);
+$answer = $delayedCache->getWithFallback($cacheKey, $veryExpansiveCalculation);
+echo 'answer is: ' . $answer;
 ```
 
 
