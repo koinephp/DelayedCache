@@ -107,7 +107,7 @@ $veryExpansiveCalculation = function () {
 };
 
 // if cache is not set, it will set and then return the cached value
-$answer = $delayedCache->getWithFallback($cacheKey, $veryExpansiveCalculation);
+$answer = $delayedCache->getCachedItem($cacheKey, $veryExpansiveCalculation);
 echo 'answer is: ' . $answer;
 ```
 

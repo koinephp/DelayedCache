@@ -6,18 +6,27 @@ use Zend\Cache\Storage\StorageInterface;
 
 /**
  * Koine\DelayedCache\DelayedCache
+ *
+ * @SuppressWarnings(PHPMD.TooManyMethods)
  */
-class DelayedCache implements StorageInterface
+class DelayedCache implements StorageInterface, DelayedCacheInterface
 {
+    const UNDER_CONSTRUCTION_PREFIX = 'Koine\DelayedCache\DelayedCache-';
+
     /** @var StorageInterface */
     private $storage;
 
+    /** @var StorageInterface */
+    private $loopWaitingTime;
+
     /**
      * @param StorageInterface $storage
+     * @param int              $loopWaitingTime time in seconds to wait and reverify if cache is redy
      */
-    public function __construct(StorageInterface $storage)
+    public function __construct(StorageInterface $storage, $loopWaitingTime = 1)
     {
         $this->storage = $storage;
+        $this->loopWaitingTime = $loopWaitingTime;
     }
 
     public function setOptions($options)
@@ -152,5 +161,25 @@ class DelayedCache implements StorageInterface
     public function getCapabilities()
     {
         return $this->storage->getCapabilities();
+    }
+
+    public function setDelayedItem($key, Closure $closure)
+    {
+        throw new Exception('Not implemented');
+    }
+
+    public function getCachedItem($key, Closure $closure)
+    {
+        throw new Exception('Not implemented');
+    }
+
+    public function itemIsReady($key)
+    {
+        throw new Exception('Not implemented');
+    }
+
+    public function itemIsUnderConstruction($key)
+    {
+        throw new Exception('Not implemented');
     }
 }

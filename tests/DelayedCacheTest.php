@@ -3,11 +3,14 @@
 namespace KoineTest\DelayedCache;
 
 use Koine\DelayedCache\DelayedCache;
+use Koine\DelayedCache\DelayedCacheInterface;
 use PHPUnit_Framework_TestCase;
 use Zend\Cache\Storage\StorageInterface;
 
 /**
  * Koine\DelayedCache\DelayedCacheTest
+ *
+ * @SuppressWarnings(PHPMD.TooManyMethods)
  */
 class DelayedCacheTest extends PHPUnit_Framework_TestCase
 {
@@ -26,9 +29,17 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     /**
      * @test
      */
-    public function itImplementsZendCacheStorageInterface()
+    public function implementsZendCacheStorageInterface()
     {
         $this->assertInstanceOf(StorageInterface::class, $this->storage);
+    }
+
+    /**
+     * @test
+     */
+    public function implementsDelayedCacheInterface()
+    {
+        $this->assertInstanceOf(DelayedCacheInterface::class, $this->storage);
     }
 
     /**
