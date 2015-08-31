@@ -84,7 +84,7 @@ $veryExpansiveCalculation = function () {
 
 // although the result is not ready yet, hasItem will return true
 if (!$delayedCache->hasItem($cacheKey)) {
-    $delayedCache->setDelayedItem($cacheKey, $veryExpansiveCalculation);
+    $delayedCache->setItem($cacheKey, $veryExpansiveCalculation);
 }
 
 // Waits 50 seconds until the building of the cache is done and then returns
