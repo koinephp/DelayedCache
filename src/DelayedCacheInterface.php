@@ -2,6 +2,8 @@
 
 namespace Koine\DelayedCache;
 
+use Closure;
+
 /**
  * Koine\DelayedCache\DelayedCacheInterface
  */

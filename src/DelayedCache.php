@@ -3,6 +3,7 @@
 namespace Koine\DelayedCache;
 
 use Zend\Cache\Storage\StorageInterface;
+use Closure;
 
 /**
  * Koine\DelayedCache\DelayedCache
@@ -11,6 +12,8 @@ use Zend\Cache\Storage\StorageInterface;
  */
 class DelayedCache implements StorageInterface, DelayedCacheInterface
 {
+    use WaiterAwareTrait;
+
     const UNDER_CONSTRUCTION_PREFIX = 'Koine\DelayedCache\DelayedCache-';
 
     /** @var StorageInterface */
@@ -165,12 +168,28 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
 
     public function setDelayedItem($key, Closure $closure)
     {
-        throw new Exception('Not implemented');
+        $this->storage->setItem($this->getDelayedKey($key), 'under_construction');
+        $this->storage->setItem($key, $closure());
+        $this->storage->removeItem($this->getDelayedKey($key));
+
+        return $this;
     }
 
     public function getCachedItem($key, Closure $closure)
     {
-        throw new Exception('Not implemented');
+        if ($this->storage->hasItem($key)) {
+            return $this->storage->getItem($key);
+        }
+
+        $delayedKey = $this->getDelayedKey($key);
+
+        if ($this->storage->hasItem($delayedKey)) {
+            while ($this->storage->hasItem($delayedKey)) {
+                $this->getWaiter()->wait(1);
+            }
+
+            return $this->storage->getItem($key);
+        }
     }
 
     public function itemIsReady($key)
@@ -181,5 +200,15 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
     public function itemIsUnderConstruction($key)
     {
         throw new Exception('Not implemented');
+    }
+
+    /**
+     * @param string $key
+     *
+     * @return string
+     */
+    private function getDelayedKey($key)
+    {
+        return self::UNDER_CONSTRUCTION_PREFIX . $key;
     }
 }

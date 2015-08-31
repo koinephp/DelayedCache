@@ -4,6 +4,7 @@ namespace KoineTest\DelayedCache;
 
 use Koine\DelayedCache\DelayedCache;
 use Koine\DelayedCache\DelayedCacheInterface;
+use Koine\DelayedCache\Waiter;
 use PHPUnit_Framework_TestCase;
 use Zend\Cache\Storage\StorageInterface;
 
@@ -15,15 +16,20 @@ use Zend\Cache\Storage\StorageInterface;
 class DelayedCacheTest extends PHPUnit_Framework_TestCase
 {
     /** @var StorageInterface */
-    protected $adapter;
+    protected $storage;
 
     /** @var DelayedCache */
-    protected $storage;
+    protected $cache;
+
+    /** @var DelayedCache */
+    protected $waiter;
 
     public function setUp()
     {
-        $this->adapter = $this->prophesize(StorageInterface::class);
-        $this->storage = new DelayedCache($this->adapter->reveal());
+        $this->waiter = $this->prophesize(Waiter::class);
+        $this->storage = $this->prophesize(StorageInterface::class);
+        $this->cache = new DelayedCache($this->storage->reveal());
+        $this->cache->setWaiter($this->waiter->reveal());
     }
 
     /**
@@ -31,7 +37,7 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function implementsZendCacheStorageInterface()
     {
-        $this->assertInstanceOf(StorageInterface::class, $this->storage);
+        $this->assertInstanceOf(StorageInterface::class, $this->cache);
     }
 
     /**
@@ -39,7 +45,7 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function implementsDelayedCacheInterface()
     {
-        $this->assertInstanceOf(DelayedCacheInterface::class, $this->storage);
+        $this->assertInstanceOf(DelayedCacheInterface::class, $this->cache);
     }
 
     /**
@@ -48,10 +54,10 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     public function delegatesSetOptions()
     {
         $options = ['foo'];
-        $return = $this->storage->setOptions($options);
-        $this->assertSame($this->storage, $return);
+        $return = $this->cache->setOptions($options);
+        $this->assertSame($this->cache, $return);
 
-        $this->adapter->setOptions($options)->shouldHaveBeenCalled();
+        $this->storage->setOptions($options)->shouldHaveBeenCalled();
     }
 
     /**
@@ -60,8 +66,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     public function delegatesGetOptions()
     {
         $options = ['foo'];
-        $this->adapter->getOptions()->willReturn($options);
-        $return = $this->storage->getOptions();
+        $this->storage->getOptions()->willReturn($options);
+        $return = $this->cache->getOptions();
 
         $this->assertSame($options, $return);
     }
@@ -76,9 +82,9 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
         $arg3 = 'baz';
 
         $item = ['foo'];
-        $this->adapter->getItem($arg1, $arg2, $arg3)->willReturn($item);
+        $this->storage->getItem($arg1, $arg2, $arg3)->willReturn($item);
 
-        $return = $this->storage->getItem($arg1, $arg2, $arg3);
+        $return = $this->cache->getItem($arg1, $arg2, $arg3);
 
         $this->assertSame($item, $return);
     }
@@ -90,8 +96,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     {
         $items = ['foo'];
         $cached = ['foo' => 'bar'];
-        $this->adapter->getItems($items)->willReturn($cached);
-        $return = $this->storage->getItems($items);
+        $this->storage->getItems($items)->willReturn($cached);
+        $return = $this->cache->getItems($items);
 
         $this->assertSame($cached, $return);
     }
@@ -101,8 +107,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesHasItem()
     {
-        $this->adapter->hasItem('cacheKey')->willReturn(true);
-        $return = $this->storage->hasItem('cacheKey');
+        $this->storage->hasItem('cacheKey')->willReturn(true);
+        $return = $this->cache->hasItem('cacheKey');
 
         $this->assertTrue($return);
     }
@@ -115,8 +121,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
         $keys = [];
         $values = [];
 
-        $this->adapter->hasItems($keys)->willReturn($values);
-        $return = $this->storage->hasItems($keys);
+        $this->storage->hasItems($keys)->willReturn($values);
+        $return = $this->cache->hasItems($keys);
 
         $this->assertSame($values, $return);
     }
@@ -126,8 +132,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesGetMetadata()
     {
-        $this->adapter->getMetadata('cacheKey')->willReturn(true);
-        $return = $this->storage->getMetadata('cacheKey');
+        $this->storage->getMetadata('cacheKey')->willReturn(true);
+        $return = $this->cache->getMetadata('cacheKey');
 
         $this->assertTrue($return);
     }
@@ -140,8 +146,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
         $keys = [];
         $values = [];
 
-        $this->adapter->getMetadatas($keys)->willReturn($values);
-        $return = $this->storage->getMetadatas($keys);
+        $this->storage->getMetadatas($keys)->willReturn($values);
+        $return = $this->cache->getMetadatas($keys);
 
         $this->assertSame($values, $return);
     }
@@ -151,8 +157,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesSetItem()
     {
-        $this->adapter->setItem('cacheKey', 'value')->willReturn(true);
-        $return = $this->storage->setItem('cacheKey', 'value');
+        $this->storage->setItem('cacheKey', 'value')->willReturn(true);
+        $return = $this->cache->setItem('cacheKey', 'value');
 
         $this->assertTrue($return);
     }
@@ -164,8 +170,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     {
         $keyValuePairs = [];
 
-        $this->adapter->setItems($keyValuePairs)->willReturn(true);
-        $return = $this->storage->setItems($keyValuePairs);
+        $this->storage->setItems($keyValuePairs)->willReturn(true);
+        $return = $this->cache->setItems($keyValuePairs);
 
         $this->assertTrue($return);
     }
@@ -175,8 +181,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesAddItem()
     {
-        $this->adapter->addItem('cacheKey', 'value')->willReturn(true);
-        $return = $this->storage->addItem('cacheKey', 'value');
+        $this->storage->addItem('cacheKey', 'value')->willReturn(true);
+        $return = $this->cache->addItem('cacheKey', 'value');
 
         $this->assertTrue($return);
     }
@@ -188,8 +194,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     {
         $keyValuePairs = [];
 
-        $this->adapter->addItems($keyValuePairs)->willReturn(true);
-        $return = $this->storage->addItems($keyValuePairs);
+        $this->storage->addItems($keyValuePairs)->willReturn(true);
+        $return = $this->cache->addItems($keyValuePairs);
 
         $this->assertTrue($return);
     }
@@ -199,8 +205,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesReplaceItem()
     {
-        $this->adapter->replaceItem('cacheKey', 'value')->willReturn(true);
-        $return = $this->storage->replaceItem('cacheKey', 'value');
+        $this->storage->replaceItem('cacheKey', 'value')->willReturn(true);
+        $return = $this->cache->replaceItem('cacheKey', 'value');
 
         $this->assertTrue($return);
     }
@@ -212,8 +218,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     {
         $keyValuePairs = [];
 
-        $this->adapter->replaceItems($keyValuePairs)->willReturn(true);
-        $return = $this->storage->replaceItems($keyValuePairs);
+        $this->storage->replaceItems($keyValuePairs)->willReturn(true);
+        $return = $this->cache->replaceItems($keyValuePairs);
 
         $this->assertTrue($return);
     }
@@ -223,8 +229,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesCheckAndSetItem()
     {
-        $this->adapter->checkAndSetItem('token', 'key', 'value')->willReturn(true);
-        $return = $this->storage->checkAndSetItem('token', 'key', 'value');
+        $this->storage->checkAndSetItem('token', 'key', 'value')->willReturn(true);
+        $return = $this->cache->checkAndSetItem('token', 'key', 'value');
 
         $this->assertTrue($return);
     }
@@ -234,8 +240,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesTouchItem()
     {
-        $this->adapter->touchItem('key')->willReturn(true);
-        $return = $this->storage->touchItem('key');
+        $this->storage->touchItem('key')->willReturn(true);
+        $return = $this->cache->touchItem('key');
 
         $this->assertTrue($return);
     }
@@ -247,8 +253,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     {
         $keyValuePairs = [];
 
-        $this->adapter->touchItems($keyValuePairs)->willReturn(true);
-        $return = $this->storage->touchItems($keyValuePairs);
+        $this->storage->touchItems($keyValuePairs)->willReturn(true);
+        $return = $this->cache->touchItems($keyValuePairs);
 
         $this->assertTrue($return);
     }
@@ -258,8 +264,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesRemoveItem()
     {
-        $this->adapter->removeItem('key')->willReturn(true);
-        $return = $this->storage->removeItem('key');
+        $this->storage->removeItem('key')->willReturn(true);
+        $return = $this->cache->removeItem('key');
 
         $this->assertTrue($return);
     }
@@ -271,8 +277,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     {
         $keyValuePairs = [];
 
-        $this->adapter->removeItems($keyValuePairs)->willReturn(true);
-        $return = $this->storage->removeItems($keyValuePairs);
+        $this->storage->removeItems($keyValuePairs)->willReturn(true);
+        $return = $this->cache->removeItems($keyValuePairs);
 
         $this->assertTrue($return);
     }
@@ -282,8 +288,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesIncrementItem()
     {
-        $this->adapter->incrementItem('key', 'increment')->willReturn(true);
-        $return = $this->storage->incrementItem('key', 'increment');
+        $this->storage->incrementItem('key', 'increment')->willReturn(true);
+        $return = $this->cache->incrementItem('key', 'increment');
 
         $this->assertTrue($return);
     }
@@ -295,8 +301,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     {
         $keyValuePairs = [];
 
-        $this->adapter->incrementItems($keyValuePairs)->willReturn(true);
-        $return = $this->storage->incrementItems($keyValuePairs);
+        $this->storage->incrementItems($keyValuePairs)->willReturn(true);
+        $return = $this->cache->incrementItems($keyValuePairs);
 
         $this->assertTrue($return);
     }
@@ -306,8 +312,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesDecrementItem()
     {
-        $this->adapter->decrementItem('key', 'decrement')->willReturn(true);
-        $return = $this->storage->decrementItem('key', 'decrement');
+        $this->storage->decrementItem('key', 'decrement')->willReturn(true);
+        $return = $this->cache->decrementItem('key', 'decrement');
 
         $this->assertTrue($return);
     }
@@ -319,8 +325,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     {
         $keyValuePairs = [];
 
-        $this->adapter->decrementItems($keyValuePairs)->willReturn(true);
-        $return = $this->storage->decrementItems($keyValuePairs);
+        $this->storage->decrementItems($keyValuePairs)->willReturn(true);
+        $return = $this->cache->decrementItems($keyValuePairs);
 
         $this->assertTrue($return);
     }
@@ -330,9 +336,93 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesGetCapabilities()
     {
-        $this->adapter->getCapabilities()->willReturn(true);
-        $return = $this->storage->getCapabilities();
+        $this->storage->getCapabilities()->willReturn(true);
+        $return = $this->cache->getCapabilities();
 
         $this->assertTrue($return);
+    }
+
+    /**
+     * @test
+     */
+    public function canSetDelayedItemReturnsAdapter()
+    {
+        $return = $this->cache->setDelayedItem('foo', function () {
+            return 'bar';
+        });
+
+        $this->assertSame($this->cache, $return);
+        $this->storage
+            ->setItem(DelayedCache::UNDER_CONSTRUCTION_PREFIX . 'foo', 'under_construction')
+            ->shouldHaveBeenCalled();
+
+        $this->storage->setItem('foo', 'bar')->shouldHaveBeenCalled();
+
+        $this->storage
+            ->removeItem(DelayedCache::UNDER_CONSTRUCTION_PREFIX . 'foo')
+            ->shouldHaveBeenCalled();
+    }
+
+    /**
+     * @test
+     */
+    public function getCachedItemGetsCachedItemWhenCacheIsReady()
+    {
+        $this->storage->hasItem('foo')->willReturn(true);
+        $this->storage->getItem('foo')->willReturn('bar');
+
+        $return = $this->cache->getCachedItem('foo', function () {
+            return 'baz';
+        });
+
+        $this->assertEquals('bar', $return);
+    }
+
+    /**
+     * @test
+     */
+    public function getCachedItemWaitsForCacheCreationWhenCacheIsUnderConstruction()
+    {
+        $delayedKey = DelayedCache::UNDER_CONSTRUCTION_PREFIX . 'foo';
+
+        $storage = $this->getMockBuilder(StorageInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $storage->expects($this->at(0))
+            ->method('hasItem')
+            ->with('foo')
+            ->will($this->returnValue(false));
+
+        $storage->expects($this->at(1))
+            ->method('hasItem')
+            ->with($delayedKey)
+            ->will($this->returnValue(true));
+
+        $storage->expects($this->at(2))
+            ->method('hasItem')
+            ->with($delayedKey)
+            ->will($this->returnValue(true));
+
+        $storage->expects($this->at(3))
+            ->method('hasItem')
+            ->with($delayedKey)
+            ->will($this->returnValue(false));
+
+        $storage->expects($this->once())
+            ->method('getItem')
+            ->with('foo')
+            ->will($this->returnValue('bar'));
+
+        $this->cache = new DelayedCache($storage);
+        $this->cache->setWaiter($this->waiter->reveal());
+
+        $return = $this->cache->getCachedItem('foo', function () {
+            return 'baz';
+        });
+
+        $this->waiter->wait(1)->shouldHaveBeenCalled();
+
+        $this->assertEquals('bar', $return);
     }
 }
