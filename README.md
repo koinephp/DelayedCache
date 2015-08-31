@@ -64,7 +64,7 @@ $veryExpansiveCalculation = function () {
 
 // hasItem returns true in the false time
 if (!$delayedCache->hasItem($cacheKey)) {
-    $delayedCache->setDelayedItem($cacheKey, $veryExpansiveCalculation);
+    $delayedCache->setItem($cacheKey, $veryExpansiveCalculation);
 }
 
 $answer = $delayedCache->getItem($cacheKey);
