@@ -533,7 +533,6 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
             ->with('foo')
             ->will($this->returnValue('bar'));
 
-
         $return = $this->cache->getCachedItem('foo', function () {
             return 'baz';
         });
