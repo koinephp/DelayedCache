@@ -30,12 +30,5 @@ interface DelayedCacheInterface
      *
      * @return bool
      */
-    public function itemIsReady($key);
-
-    /**
-     * @param string $key
-     *
-     * @return bool
-     */
     public function itemIsUnderConstruction($key);
 }

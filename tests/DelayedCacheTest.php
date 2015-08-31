@@ -24,12 +24,16 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     /** @var DelayedCache */
     protected $waiter;
 
+    /** @var string */
+    protected $delayedKey;
+
     public function setUp()
     {
         $this->waiter = $this->prophesize(Waiter::class);
         $this->storage = $this->prophesize(StorageInterface::class);
         $this->cache = new DelayedCache($this->storage->reveal());
         $this->cache->setWaiter($this->waiter->reveal());
+        $this->delayedKey = DelayedCache::UNDER_CONSTRUCTION_PREFIX . 'foo';
     }
 
     /**
@@ -77,6 +81,8 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesGetItem()
     {
+        $this->storage->hasItem($this->delayedKey)->willReturn(false);
+
         $arg1 = 'foo';
         $arg2 = 'bar';
         $arg3 = 'baz';
@@ -87,6 +93,37 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
         $return = $this->cache->getItem($arg1, $arg2, $arg3);
 
         $this->assertSame($item, $return);
+    }
+
+    /**
+     * @test
+     */
+    public function getItemWaitsWhenItemIsUnderConstruction()
+    {
+        $storage = $this->mockWithPhpUnit();
+
+        $storage->expects($this->at(0))
+            ->method('hasItem')
+            ->with($this->delayedKey)
+            ->will($this->returnValue(true));
+
+        $storage->expects($this->at(1))
+            ->method('hasItem')
+            ->with($this->delayedKey)
+            ->will($this->returnValue(false));
+
+        $arg1 = 'foo';
+        $arg2 = 'bar';
+        $arg3 = 'baz';
+
+        $storage->expects($this->once())
+            ->method('getItem')
+            ->with($arg1, $arg2, $arg3)
+            ->will($this->returnValue(['foo']));
+
+        $return = $this->cache->getItem($arg1, $arg2, $arg3);
+
+        $this->assertEquals(['foo'], $return);
     }
 
     /**
@@ -109,6 +146,18 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     {
         $this->storage->hasItem('cacheKey')->willReturn(true);
         $return = $this->cache->hasItem('cacheKey');
+
+        $this->assertTrue($return);
+    }
+
+    /**
+     * @test
+     */
+    public function hasItemReturnsTrueWhenItemIsUnderConstruction()
+    {
+        $this->storage->hasItem('foo')->willReturn(false);
+        $this->storage->hasItem($this->delayedKey)->willReturn(true);
+        $return = $this->cache->hasItem('foo');
 
         $this->assertTrue($return);
     }
@@ -159,6 +208,22 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     {
         $this->storage->setItem('cacheKey', 'value')->willReturn(true);
         $return = $this->cache->setItem('cacheKey', 'value');
+
+        $this->assertTrue($return);
+    }
+
+    /**
+     * @test
+     */
+    public function canSetItemAsClosure()
+    {
+        $this->storage->setItem($this->delayedKey, 'under_construction')->willReturn(true);
+        $this->storage->setItem('foo', 'bar')->willReturn(true);
+        $this->storage->removeItem($this->delayedKey)->willReturn(true);
+
+        $return = $this->cache->setItem('foo', function () {
+            return 'bar';
+        });
 
         $this->assertTrue($return);
     }
@@ -288,8 +353,37 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesIncrementItem()
     {
-        $this->storage->incrementItem('key', 'increment')->willReturn(true);
-        $return = $this->cache->incrementItem('key', 'increment');
+        $this->storage->hasItem($this->delayedKey)->willReturn(false);
+        $this->storage->incrementItem('foo', 'increment')->willReturn(true);
+
+        $return = $this->cache->incrementItem('foo', 'increment');
+
+        $this->assertTrue($return);
+    }
+
+    /**
+     * @test
+     */
+    public function whenItemIsUnderConstructionItWaitsBeforeIncrementing()
+    {
+        $storage = $this->mockWithPhpUnit();
+
+        $storage->expects($this->at(0))
+            ->method('hasItem')
+            ->with($this->delayedKey)
+            ->will($this->returnValue(true));
+
+        $storage->expects($this->at(1))
+            ->method('hasItem')
+            ->with($this->delayedKey)
+            ->will($this->returnValue(false));
+
+        $storage->expects($this->at(2))
+            ->method('incrementItem')
+            ->with('foo', 'increment')
+            ->will($this->returnValue(true));
+
+        $return = $this->cache->incrementItem('foo', 'increment');
 
         $this->assertTrue($return);
     }
@@ -312,8 +406,36 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesDecrementItem()
     {
-        $this->storage->decrementItem('key', 'decrement')->willReturn(true);
-        $return = $this->cache->decrementItem('key', 'decrement');
+        $this->storage->hasItem($this->delayedKey)->willReturn(false);
+        $this->storage->decrementItem('foo', 'decrement')->willReturn(true);
+        $return = $this->cache->decrementItem('foo', 'decrement');
+
+        $this->assertTrue($return);
+    }
+
+    /**
+     * @test
+     */
+    public function whenItemIsUnderConstructionItWaitsBeforeDecrementing()
+    {
+        $storage = $this->mockWithPhpUnit();
+
+        $storage->expects($this->at(0))
+            ->method('hasItem')
+            ->with($this->delayedKey)
+            ->will($this->returnValue(true));
+
+        $storage->expects($this->at(1))
+            ->method('hasItem')
+            ->with($this->delayedKey)
+            ->will($this->returnValue(false));
+
+        $storage->expects($this->at(2))
+            ->method('decrementItem')
+            ->with('foo', 'decrement')
+            ->will($this->returnValue(true));
+
+        $return = $this->cache->decrementItem('foo', 'decrement');
 
         $this->assertTrue($return);
     }
@@ -347,20 +469,21 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function canSetDelayedItemReturnsAdapter()
     {
+        $this->storage
+            ->setItem($this->delayedKey, 'under_construction')
+            ->shouldBeCalled();
+
+        $this->storage
+            ->removeItem($this->delayedKey)
+            ->shouldBeCalled();
+
+        $this->storage->setItem('foo', 'bar')->willReturn(true);
+
         $return = $this->cache->setDelayedItem('foo', function () {
             return 'bar';
         });
 
-        $this->assertSame($this->cache, $return);
-        $this->storage
-            ->setItem(DelayedCache::UNDER_CONSTRUCTION_PREFIX . 'foo', 'under_construction')
-            ->shouldHaveBeenCalled();
-
-        $this->storage->setItem('foo', 'bar')->shouldHaveBeenCalled();
-
-        $this->storage
-            ->removeItem(DelayedCache::UNDER_CONSTRUCTION_PREFIX . 'foo')
-            ->shouldHaveBeenCalled();
+        $this->assertSame(true, $return);
     }
 
     /**
@@ -383,11 +506,7 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function getCachedItemWaitsForCacheCreationWhenCacheIsUnderConstruction()
     {
-        $delayedKey = DelayedCache::UNDER_CONSTRUCTION_PREFIX . 'foo';
-
-        $storage = $this->getMockBuilder(StorageInterface::class)
-            ->disableOriginalConstructor()
-            ->getMock();
+        $storage = $this->mockWithPhpUnit();
 
         $storage->expects($this->at(0))
             ->method('hasItem')
@@ -396,17 +515,17 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
 
         $storage->expects($this->at(1))
             ->method('hasItem')
-            ->with($delayedKey)
+            ->with($this->delayedKey)
             ->will($this->returnValue(true));
 
         $storage->expects($this->at(2))
             ->method('hasItem')
-            ->with($delayedKey)
+            ->with($this->delayedKey)
             ->will($this->returnValue(true));
 
         $storage->expects($this->at(3))
             ->method('hasItem')
-            ->with($delayedKey)
+            ->with($this->delayedKey)
             ->will($this->returnValue(false));
 
         $storage->expects($this->once())
@@ -414,8 +533,6 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
             ->with('foo')
             ->will($this->returnValue('bar'));
 
-        $this->cache = new DelayedCache($storage);
-        $this->cache->setWaiter($this->waiter->reveal());
 
         $return = $this->cache->getCachedItem('foo', function () {
             return 'baz';
@@ -424,5 +541,58 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
         $this->waiter->wait(1)->shouldHaveBeenCalled();
 
         $this->assertEquals('bar', $return);
+    }
+
+    /**
+     * @test
+     */
+    public function getCachedItemSetsCacheWhenNoneExists()
+    {
+        $storage = $this->mockWithPhpUnit();
+
+        $storage->expects($this->at(0))
+            ->method('hasItem')
+            ->with('foo')
+            ->will($this->returnValue(false));
+
+        $storage->expects($this->at(1))
+            ->method('hasItem')
+            ->with($this->delayedKey)
+            ->will($this->returnValue(false));
+
+        $storage->expects($this->at(2))
+            ->method('setItem')
+            ->with($this->delayedKey, 'under_construction');
+
+        $storage->expects($this->at(3))
+            ->method('setItem')
+            ->with('foo', 'bar');
+
+        $storage->expects($this->once())
+            ->method('removeItem')
+            ->with($this->delayedKey);
+
+        $storage->expects($this->once())
+            ->method('getItem')
+            ->with('foo')
+            ->will($this->returnValue('bar'));
+
+        $return = $this->cache->getCachedItem('foo', function () {
+            return 'bar';
+        });
+
+        $this->assertEquals('bar', $return);
+    }
+
+    private function mockWithPhpUnit()
+    {
+        $this->storage = $this->getMockBuilder(StorageInterface::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $this->cache = new DelayedCache($this->storage);
+        $this->cache->setWaiter($this->waiter->reveal());
+
+        return $this->storage;
     }
 }

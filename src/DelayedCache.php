@@ -14,7 +14,8 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
 {
     use WaiterAwareTrait;
 
-    const UNDER_CONSTRUCTION_PREFIX = 'Koine\DelayedCache\DelayedCache-';
+    const UNDER_CONSTRUCTION_PREFIX = 'Koine_DelayedCache_DelayedCache_';
+    const UNDER_CONSTRUCTION_VALUE = 'under_construction';
 
     /** @var StorageInterface */
     private $storage;
@@ -44,11 +45,12 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
         return $this->storage->getOptions();
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getItem($key, &$success = null, &$casToken = null)
     {
+        if ($this->itemIsUnderConstruction($key)) {
+            $this->waitForItem($key);
+        }
+
         return $this->storage->getItem($key, $success, $casToken);
     }
 
@@ -57,12 +59,10 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
         return $this->storage->getItems($keys);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function hasItem($key)
     {
-        return $this->storage->hasItem($key);
+        return $this->storage->hasItem($key) ||
+            $this->storage->hasItem($this->getDelayedKey($key));
     }
 
     public function hasItems(array $keys)
@@ -82,6 +82,10 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
 
     public function setItem($key, $value)
     {
+        if ($value instanceof Closure) {
+            return $this->setDelayedItem($key, $value);
+        }
+
         return $this->storage->setItem($key, $value);
     }
 
@@ -135,11 +139,12 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
         return $this->storage->removeItems($keys);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function incrementItem($key, $value)
     {
+        if ($this->itemIsUnderConstruction($key)) {
+            $this->waitForItem($key);
+        }
+
         return $this->storage->incrementItem($key, $value);
     }
 
@@ -148,11 +153,12 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
         return $this->storage->incrementItems($keyValuePairs);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function decrementItem($key, $value)
     {
+        if ($this->itemIsUnderConstruction($key)) {
+            $this->waitForItem($key);
+        }
+
         return $this->storage->decrementItem($key, $value);
     }
 
@@ -168,11 +174,11 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
 
     public function setDelayedItem($key, Closure $closure)
     {
-        $this->storage->setItem($this->getDelayedKey($key), 'under_construction');
-        $this->storage->setItem($key, $closure());
+        $this->storage->setItem($this->getDelayedKey($key), self::UNDER_CONSTRUCTION_VALUE);
+        $setReturn = $this->storage->setItem($key, $closure());
         $this->storage->removeItem($this->getDelayedKey($key));
 
-        return $this;
+        return $setReturn;
     }
 
     public function getCachedItem($key, Closure $closure)
@@ -181,25 +187,20 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
             return $this->storage->getItem($key);
         }
 
-        $delayedKey = $this->getDelayedKey($key);
-
-        if ($this->storage->hasItem($delayedKey)) {
-            while ($this->storage->hasItem($delayedKey)) {
-                $this->getWaiter()->wait(1);
-            }
+        if ($this->itemIsUnderConstruction($key)) {
+            $this->waitForItem($key);
 
             return $this->storage->getItem($key);
         }
-    }
 
-    public function itemIsReady($key)
-    {
-        throw new Exception('Not implemented');
+        $this->setDelayedItem($key, $closure);
+
+        return $this->getItem($key);
     }
 
     public function itemIsUnderConstruction($key)
     {
-        throw new Exception('Not implemented');
+        return $this->storage->hasItem($this->getDelayedKey($key));
     }
 
     /**
@@ -210,5 +211,15 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
     private function getDelayedKey($key)
     {
         return self::UNDER_CONSTRUCTION_PREFIX . $key;
+    }
+
+    /**
+     * @param string $key
+     */
+    private function waitForItem($key)
+    {
+        while ($this->itemIsUnderConstruction($key)) {
+            $this->getWaiter()->wait($this->loopWaitingTime);
+        }
     }
 }
