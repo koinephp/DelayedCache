@@ -32,6 +32,11 @@ $zendCacheResult = function () use ($zendCache, $calculation) {
         return $zendCache->getItem('result');
     }
 
+    // $zendCache->setItem('result', $calculation);
+    // $result = $zendCache->getItem('result');
+
+    // The above do not work with zend
+
     $result = $calculation();
     $zendCache->setItem('result', $result);
     return $result;
@@ -39,13 +44,16 @@ $zendCacheResult = function () use ($zendCache, $calculation) {
 
 // Result from delayedCache
 $delayedCacheResult = function () use ($delayedCache, $calculation) {
-    if ($delayedCache->hasItem('result')) {
-        return $delayedCache->getItem('result');
-    }
+    // if ($delayedCache->hasItem('result')) {
+    //     return $delayedCache->getItem('result');
+    // }
+    //
+    // $delayedCache->setItem('result', $calculation);
+    //
+    // return $delayedCache->getItem('result');
 
-    $delayedCache->setItem('result', $calculation);
-
-    return $delayedCache->getItem('result');
+    // Either the above or Tell don't ask:
+    return $delayedCache->getCachedItem('result', $calculation);
 };
 
 $getExecutionTime = function () use ($startTime) {
