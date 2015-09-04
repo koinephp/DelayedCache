@@ -31,10 +31,14 @@ class RegularCache extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $date = date('Y-d-m H:m:s');
+        $output->writeln("<info>Started at:</info>\t$date");
+
         $startTime = microtime(true);
         $result = $this->getResult();
-        $output->writeln("<info>Result:</info>\t\t$result");
         $elapsedTime = round(microtime(true) - $startTime, 4);
+
+        $output->writeln("<info>Result:</info>\t\t$result");
         $output->writeln("<info>Elapsed Time:</info>\t$elapsedTime</info>");
     }
 
