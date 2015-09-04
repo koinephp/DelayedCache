@@ -15,9 +15,13 @@
     "require-dev": {
         "phpunit/phpunit": "*",
         "fabpot/php-cs-fixer": "1.7.*",
+        "symfony/console": "~2.7",
         "satooshi/php-coveralls": "dev-master"
     },
     "autoload": {
         "psr-4": {"Koine\\DelayedCache\\": "src/"}
+    },
+    "autoload-dev": {
+        "psr-4": {"Example\\": "example/src"}
     }
 }
