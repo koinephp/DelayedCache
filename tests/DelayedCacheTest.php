@@ -329,9 +329,19 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
      */
     public function delegatesRemoveItem()
     {
-        $this->storage->removeItem('key')->willReturn(true);
-        $return = $this->cache->removeItem('key');
+        $storage = $this->mockWithPhpUnit();
 
+        $storage->expects($this->at(0))
+            ->method('removeItem')
+            ->with('foo')
+            ->will($this->returnValue(true));
+
+        $storage->expects($this->at(1))
+            ->method('removeItem')
+            ->with($this->delayedKey)
+            ->will($this->returnValue(false));
+
+        $return = $this->cache->removeItem('foo');
         $this->assertTrue($return);
     }
 

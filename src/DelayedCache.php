@@ -131,7 +131,10 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
 
     public function removeItem($key)
     {
-        return $this->storage->removeItem($key);
+        $return = $this->storage->removeItem($key);
+        $this->storage->removeItem($this->getDelayedKey($key));
+
+        return $return;
     }
 
     public function removeItems(array $keys)
