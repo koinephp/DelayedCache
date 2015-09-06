@@ -1,8 +1,9 @@
 # Koine Delayed Cache
 
-Delayed Cache. Sometimes you want a cached result when its construction is
-still ongoing. Delayed cache will wait until it is ready and then it will return
-the result for you.
+Delayed Cache is a wrapper for Zend Cache. Sometimes you have parallel requests
+want a cached result that was already started, but is still under construction.
+Delayed cache will wait until it is ready and then it will return the result
+for you.
 
 Code information:
 
@@ -111,6 +112,7 @@ $answer = $delayedCache->getCachedItem($cacheKey, $veryExpansiveCalculation);
 echo 'answer is: ' . $answer;
 ```
 
+[![When it shines](http://img.youtube.com/vi/RWuUif3s5b4/0.jpg)](http://www.youtube.com/watch?v=RWuUif3s5b4)
 
 ## Issues/Features proposals
 
