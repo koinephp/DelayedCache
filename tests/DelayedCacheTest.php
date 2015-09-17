@@ -39,6 +39,14 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     /**
      * @test
      */
+    public function canGetStorage()
+    {
+        $this->assertSame($this->storage->reveal(), $this->cache->getStorage());
+    }
+
+    /**
+     * @test
+     */
     public function implementsZendCacheStorageInterface()
     {
         $this->assertInstanceOf(StorageInterface::class, $this->cache);

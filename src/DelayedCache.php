@@ -33,6 +33,14 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
         $this->loopWaitingTime = $loopWaitingTime;
     }
 
+    /**
+     * @return StorageInterface
+     */
+    public function getStorage()
+    {
+        return $this->storage;
+    }
+
     public function setOptions($options)
     {
         $this->storage->setOptions($options);
