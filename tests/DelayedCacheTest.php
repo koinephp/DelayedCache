@@ -236,6 +236,42 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($return);
     }
 
+    public function dataProviderForExceptions()
+    {
+        return array(
+            array(new \Exception()),
+            array(new \DomainException()),
+            array(new \InvalidArgumentException()),
+            array(new \ErrorException()),
+        );
+    }
+
+    /**
+     * @group focus
+     * @test
+     * @dataProvider dataProviderForExceptions
+     */
+    public function whenAnExceptionOccoursItWillRemoveTheTemporaryCacheKey($exception)
+    {
+        $this->setExpectedException(get_class($exception));
+
+        $storage = $this->mockWithPhpUnit();
+
+        $storage->expects($this->at(0))
+            ->method('setItem')
+            ->with($this->delayedKey)
+            ->will($this->returnValue(true));
+
+        $storage->expects($this->at(1))
+            ->method('removeItem')
+            ->with($this->delayedKey)
+            ->will($this->returnValue(true));
+
+        $this->cache->setItem('foo', function () use ($exception) {
+            throw $exception;
+        });
+    }
+
     /**
      * @test
      */

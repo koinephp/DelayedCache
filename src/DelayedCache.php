@@ -185,11 +185,18 @@ class DelayedCache implements StorageInterface, DelayedCacheInterface
 
     public function setDelayedItem($key, Closure $closure)
     {
-        $this->storage->setItem($this->getDelayedKey($key), self::UNDER_CONSTRUCTION_VALUE);
-        $setReturn = $this->storage->setItem($key, $closure());
-        $this->storage->removeItem($this->getDelayedKey($key));
+        try {
+            $delayedKey = $this->getDelayedKey($key);
+            $this->storage->setItem($this->getDelayedKey($key), self::UNDER_CONSTRUCTION_VALUE);
+            $setReturn = $this->storage->setItem($key, $closure());
+            $this->storage->removeItem($delayedKey);
 
-        return $setReturn;
+            return $setReturn;
+        } catch (\Exception $exception) {
+            $this->storage->removeItem($delayedKey);
+
+            throw $exception;
+        }
     }
 
     public function getCachedItem($key, Closure $closure)
