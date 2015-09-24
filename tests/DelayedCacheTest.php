@@ -247,7 +247,6 @@ class DelayedCacheTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @group focus
      * @test
      * @dataProvider dataProviderForExceptions
      */
